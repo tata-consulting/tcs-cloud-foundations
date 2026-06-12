@@ -6,4 +6,5 @@ Cloud foundation patterns, guardrails, and reusable assets from TATA Consulting 
 - `terraform/aws/landing-zone/` - starter Terraform for an AWS landing zone
 - `docs/architecture/` - cloud foundation diagrams
 - `docs/meeting-minutes/` - bootstrap planning notes and actions
+- `docs/coding-agents/considerations.md` - guidance for using GitHub Copilot and Gemini Code Assist
 
