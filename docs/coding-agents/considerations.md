@@ -6,7 +6,7 @@ This document outlines initial guidance for using AI coding agents — including
 
 ## Purpose
 
-AI coding agents can accelerate Terraform authoring, policy-as-code generation, and documentation. Adopting them without guardrails introduces risks around secret leakage, licence contamination, and drift from TCS-approved patterns. This document records the decisions and constraints that apply before agent-assisted code reaches this repository.
+AI coding agents can accelerate Terraform authoring, policy-as-code generation, and documentation. Adopting them without guardrails introduces risks around secret leakage, license contamination, and drift from TCS-approved patterns. This document records the decisions and constraints that apply before agent-assisted code reaches this repository.
 
 ---
 
@@ -26,7 +26,7 @@ Other AI tools require explicit approval from the platform team before use in th
 1. **Human review is mandatory.** Every AI-generated change must be reviewed and understood by the engineer before it is committed. Copilot and Gemini suggestions are a starting point, not a final answer.
 2. **No secrets in prompts.** Do not paste AWS account IDs, access keys, ARNs that identify production accounts, or any credential material into a chat or inline prompt. Use placeholders (`<ACCOUNT_ID>`) instead.
 3. **Validate against TCS patterns.** Generated Terraform must pass the guardrail checklist (issue #2) and conform to the module interfaces in `modules/`. Agents are unaware of internal conventions; engineers must reconcile the gap.
-4. **Licence awareness.** Treat agent-generated code with the same scrutiny as third-party code. If a suggestion is a verbatim copy of a known library, confirm the licence is compatible with the repository's licence before committing.
+4. **Licence awareness.** Treat agent-generated code with the same scrutiny as third-party code. If a suggestion is a verbatim copy of a known library, confirm the license is compatible with the repository's license before committing.
 5. **Reproducibility.** Commit messages must describe the intent of the change. If an agent wrote a substantial portion of the diff, note it (e.g., `co-authored-by: GitHub Copilot`). This preserves the audit trail and helps future reviewers understand provenance.
 
 ---
@@ -35,7 +35,7 @@ Other AI tools require explicit approval from the platform team before use in th
 
 ### Configuration
 
-- Enable Copilot only through the organisation-managed GitHub licence; do not use personal free-tier accounts on TCS work items.
+- Enable Copilot only through the organization-managed GitHub license; do not use personal free-tier accounts on TCS work items.
 - In VS Code / JetBrains, set `editor.inlineSuggest.enabled = true` and review each suggestion before accepting.
 - Use **Copilot Chat** (`/explain`, `/fix`, `/tests`) to interrogate unfamiliar resources before copying suggestions.
 
@@ -63,7 +63,7 @@ Other AI tools require explicit approval from the platform team before use in th
 
 ### Configuration
 
-- Use the Google Cloud-managed Gemini Code Assist extension through the organisation's GCP project; do not authenticate with personal Google accounts.
+- Use the Google Cloud-managed Gemini Code Assist extension through the organization's GCP project; do not authenticate with personal Google accounts.
 - Ensure the Gemini Code Assist IDE plugin is pinned to an approved version listed in the platform wiki.
 
 ### Recommended Use Cases
