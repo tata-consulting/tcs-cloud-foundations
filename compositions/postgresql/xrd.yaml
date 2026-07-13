@@ -1,0 +1,71 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: xpostgresdatabases.platform.tcs.io
+spec:
+  group: platform.tcs.io
+  names:
+    kind: XPostgresDatabase
+    plural: xpostgresdatabases
+  claimNames:
+    kind: PostgresDatabase
+    plural: postgresdatabases
+  connectionSecretKeys:
+    - host
+    - port
+    - username
+    - password
+    - dbname
+    - url
+  versions:
+    - name: v1alpha1
+      served: true
+      referenceable: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                parameters:
+                  type: object
+                  description: Parameters for the PostgresDatabase claim.
+                  properties:
+                    storageGB:
+                      type: integer
+                      description: Allocated storage in gigabytes.
+                      default: 20
+                      minimum: 5
+                      maximum: 65536
+                    instanceClass:
+                      type: string
+                      description: RDS DB instance class (e.g. db.t3.medium, db.r6g.large).
+                      default: db.t3.medium
+                    multiAZ:
+                      type: boolean
+                      description: |
+                        Enable Multi-AZ deployment for high availability. Automatically
+                        set to true in namespaces labelled platform.tcs.io/environment=production.
+                      default: false
+                    backupRetentionDays:
+                      type: integer
+                      description: Number of days to retain automated backups. 0 disables backups.
+                      default: 7
+                      minimum: 0
+                      maximum: 35
+                    engineVersion:
+                      type: string
+                      description: PostgreSQL engine version (e.g. "15.4", "14.9").
+                      default: "15.4"
+                    deletionPolicy:
+                      type: string
+                      description: |
+                        What happens to the underlying RDS instance when the claim is deleted.
+                        Orphan (default) leaves the instance running - recommended for production.
+                        Delete removes the instance immediately.
+                      default: Orphan
+                      enum:
+                        - Delete
+                        - Orphan
+                  required: []

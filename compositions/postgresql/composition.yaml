@@ -1,0 +1,143 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: xpostgresdatabases.platform.tcs.io
+  labels:
+    provider: aws
+    service: rds
+    engine: postgresql
+spec:
+  compositeTypeRef:
+    apiVersion: platform.tcs.io/v1alpha1
+    kind: XPostgresDatabase
+
+  writeConnectionSecretsToNamespace: crossplane-system
+
+  resources:
+    # ------------------------------------------------------------------
+    # DBSubnetGroup
+    # Naming includes claim namespace and name to prevent collisions when
+    # multiple claims exist in the same namespace.
+    # ------------------------------------------------------------------
+    - name: dbsubnetgroup
+      base:
+        apiVersion: rds.aws.crossplane.io/v1alpha1
+        kind: DBSubnetGroup
+        spec:
+          forProvider:
+            region: us-east-1
+            description: "Managed by Crossplane - TCS PostgresDatabase"
+            subnetIds: []  # Patched in via environment config or EnvironmentConfig
+          providerConfigRef:
+            name: aws-provider
+      patches:
+        - type: FromCompositeFieldPath
+          fromFieldPath: metadata.namespace
+          toFieldPath: spec.forProvider.groupName
+          transforms:
+            - type: string
+              string:
+                fmt: "%s"
+        - type: CombineFromComposite
+          combine:
+            variables:
+              - fromFieldPath: metadata.namespace
+              - fromFieldPath: metadata.name
+            strategy: string
+            string:
+              fmt: "tcs-%s-%s-subnet-group"
+          toFieldPath: spec.forProvider.groupName
+
+    # ------------------------------------------------------------------
+    # RDSInstance
+    # ------------------------------------------------------------------
+    - name: rdsinstance
+      base:
+        apiVersion: rds.aws.crossplane.io/v1alpha1
+        kind: RDSInstance
+        spec:
+          forProvider:
+            region: us-east-1
+            dbInstanceClass: db.t3.medium
+            engine: postgres
+            engineVersion: "15.4"
+            allocatedStorage: 20
+            multiAZ: false
+            backupRetentionPeriod: 7
+            storageEncrypted: true
+            storageType: gp3
+            publiclyAccessible: false
+            deletionProtection: false
+            autoMinorVersionUpgrade: true
+            tags:
+              - key: ManagedBy
+                value: crossplane
+              - key: Service
+                value: postgresql
+          writeConnectionSecretToRef:
+            namespace: crossplane-system
+          providerConfigRef:
+            name: aws-provider
+      patches:
+        # Claim parameters -> RDS fields
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.instanceClass
+          toFieldPath: spec.forProvider.dbInstanceClass
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.storageGB
+          toFieldPath: spec.forProvider.allocatedStorage
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.multiAZ
+          toFieldPath: spec.forProvider.multiAZ
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.backupRetentionDays
+          toFieldPath: spec.forProvider.backupRetentionPeriod
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.engineVersion
+          toFieldPath: spec.forProvider.engineVersion
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.deletionPolicy
+          toFieldPath: spec.forProvider.deletionProtection
+          transforms:
+            - type: map
+              map:
+                Orphan: "true"
+                Delete: "false"
+
+        # Connection secret name derived from claim name
+        - type: CombineFromComposite
+          combine:
+            variables:
+              - fromFieldPath: metadata.namespace
+              - fromFieldPath: metadata.name
+            strategy: string
+            string:
+              fmt: "tcs-%s-%s-conn"
+          toFieldPath: spec.writeConnectionSecretToRef.name
+
+        # Production namespace override: force multiAZ=true
+        # Requires the claim namespace to have label:
+        #   platform.tcs.io/environment=production
+        - type: FromEnvironmentFieldPath
+          fromFieldPath: platform.tcs.io/environment
+          toFieldPath: spec.forProvider.multiAZ
+          transforms:
+            - type: map
+              map:
+                production: "true"
+          policy:
+            fromFieldPath: Optional
+
+      connectionDetails:
+        - name: host
+          fromConnectionSecretKey: endpoint
+        - name: port
+          fromConnectionSecretKey: port
+        - name: username
+          fromConnectionSecretKey: username
+        - name: password
+          fromConnectionSecretKey: password
+        - name: dbname
+          fromConnectionSecretKey: dbname
+        - name: url
+          fromConnectionSecretKey: url
